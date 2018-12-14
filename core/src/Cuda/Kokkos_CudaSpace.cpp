@@ -114,6 +114,23 @@ void DeepCopyAsyncCuda( void * dst , const void * src , size_t n) {
 
 
 namespace Kokkos {
+  int CudaSpace::maxDynamicSharedMemorySize = -1;
+  int CudaSpace::preferredSharedMemoryCarveout = -1;
+
+  void CudaSpace::setMaxDynamicSharedMemorySize(int value){
+    maxDynamicSharedMemorySize = value;
+  }
+
+  void CudaSpace::setPreferredSharedMemoryCarveout(int value){
+    preferredSharedMemoryCarveout = value;
+  }
+  int CudaSpace::getMaxDynamicSharedMemorySize(){
+    return maxDynamicSharedMemorySize;
+  }
+
+  int CudaSpace::getPreferredSharedMemoryCarveout(){
+    return preferredSharedMemoryCarveout;
+  }
 
 void CudaSpace::access_error()
 {

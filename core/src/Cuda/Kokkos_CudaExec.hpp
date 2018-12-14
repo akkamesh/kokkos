@@ -224,12 +224,37 @@ struct CudaParallelLaunch< DriverType
       #ifndef KOKKOS_ARCH_KEPLER
       // On Kepler the L1 has no benefit since it doesn't cache reads
       else {
-        CUDA_SAFE_CALL(
-          cudaFuncSetCacheConfig
-            ( cuda_parallel_launch_constant_memory
-                < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >
-            , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
-            ) );
+
+	int maxDynamicSharedMemorySize = Kokkos::CudaSpace::getMaxDynamicSharedMemorySize();
+	int preferredSharedMemoryCarveout = Kokkos::CudaSpace::getPreferredSharedMemoryCarveout();
+
+	if(preferredSharedMemoryCarveout == -1 && maxDynamicSharedMemorySize == -1){
+	  CUDA_SAFE_CALL(
+			 cudaFuncSetCacheConfig
+			 ( cuda_parallel_launch_constant_memory
+			   < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >
+			   , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
+			   ) );
+	}else{
+	  if(maxDynamicSharedMemorySize == -1){
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute
+			   (cuda_parallel_launch_constant_memory
+			    < DriverType , MaxThreadsPerBlock, MinBlocksPerSM >,
+			    cudaFuncAttributePreferredSharedMemoryCarveout,
+			    preferredSharedMemoryCarveout) );
+	  }
+	  if(maxDynamicSharedMemorySize > 0){
+	    if( maxDynamicSharedMemorySize < shmem )
+	      maxDynamicSharedMemorySize = shmem;
+	  
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute
+			   (cuda_parallel_launch_constant_memory
+			    < DriverType , MaxThreadsPerBlock, MinBlocksPerSM >,
+			    cudaFuncAttributeMaxDynamicSharedMemorySize,
+			    maxDynamicSharedMemorySize) );
+	  }
+	}
+	
       }
       #endif
 
@@ -248,6 +273,10 @@ struct CudaParallelLaunch< DriverType
       CUDA_SAFE_CALL( cudaGetLastError() );
       Kokkos::Cuda::fence();
 #endif
+
+      // reset
+      Kokkos::CudaSpace::setMaxDynamicSharedMemorySize(-1);
+      Kokkos::CudaSpace::setPreferredSharedMemoryCarveout(-1);
     }
   }
 };
@@ -280,11 +309,29 @@ struct CudaParallelLaunch< DriverType
       #ifndef KOKKOS_ARCH_KEPLER
       // On Kepler the L1 has no benefit since it doesn't cache reads
       else {
-        CUDA_SAFE_CALL(
-          cudaFuncSetCacheConfig
-            ( cuda_parallel_launch_constant_memory< DriverType >
-            , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
-            ) );
+
+	int maxDynamicSharedMemorySize = Kokkos::CudaSpace::getMaxDynamicSharedMemorySize();
+	int preferredSharedMemoryCarveout = Kokkos::CudaSpace::getPreferredSharedMemoryCarveout();
+
+	if(preferredSharedMemoryCarveout == -1 && maxDynamicSharedMemorySize == -1){
+	  CUDA_SAFE_CALL(cudaFuncSetCacheConfig(cuda_parallel_launch_constant_memory< DriverType >,
+						( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )) );
+
+	}else{
+	  if(maxDynamicSharedMemorySize == -1){
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute(cuda_parallel_launch_constant_memory< DriverType >,
+						cudaFuncAttributePreferredSharedMemoryCarveout,
+						preferredSharedMemoryCarveout) );
+	  }
+	  if(maxDynamicSharedMemorySize > 0){
+	    if( maxDynamicSharedMemorySize < shmem )
+	      maxDynamicSharedMemorySize = shmem;
+	  
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute(cuda_parallel_launch_constant_memory< DriverType >,
+						cudaFuncAttributeMaxDynamicSharedMemorySize,
+						maxDynamicSharedMemorySize) );
+	  }
+	}
       }
       #endif
 
@@ -302,6 +349,10 @@ struct CudaParallelLaunch< DriverType
       CUDA_SAFE_CALL( cudaGetLastError() );
       Kokkos::Cuda::fence();
 #endif
+
+      // reset
+      Kokkos::CudaSpace::setMaxDynamicSharedMemorySize(-1);
+      Kokkos::CudaSpace::setPreferredSharedMemoryCarveout(-1);
     }
   }
 };
@@ -334,12 +385,35 @@ struct CudaParallelLaunch< DriverType
       #ifndef KOKKOS_ARCH_KEPLER
       // On Kepler the L1 has no benefit since it doesn't cache reads
       else {
-        CUDA_SAFE_CALL(
-          cudaFuncSetCacheConfig
-            ( cuda_parallel_launch_local_memory
-                < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >
-            , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
-            ) );
+
+	int maxDynamicSharedMemorySize = Kokkos::CudaSpace::getMaxDynamicSharedMemorySize();
+	int preferredSharedMemoryCarveout = Kokkos::CudaSpace::getPreferredSharedMemoryCarveout();
+
+	if(preferredSharedMemoryCarveout == -1 && maxDynamicSharedMemorySize == -1){
+	  CUDA_SAFE_CALL(cudaFuncSetCacheConfig
+			 ( cuda_parallel_launch_local_memory
+			   < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >
+			   , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
+			   ) );
+	}else{
+	  if(maxDynamicSharedMemorySize == -1){
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute
+			   (cuda_parallel_launch_constant_memory
+			    < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >,
+			    cudaFuncAttributePreferredSharedMemoryCarveout,
+			    preferredSharedMemoryCarveout) );
+	  }
+	  if(maxDynamicSharedMemorySize > 0){
+	    if( maxDynamicSharedMemorySize < shmem )
+	      maxDynamicSharedMemorySize = shmem;
+	  
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute
+			   (cuda_parallel_launch_constant_memory
+			    < DriverType, MaxThreadsPerBlock, MinBlocksPerSM >,
+			    cudaFuncAttributeMaxDynamicSharedMemorySize,
+			    maxDynamicSharedMemorySize) );
+	  }
+	}	
       }
       #endif
 
@@ -354,6 +428,10 @@ struct CudaParallelLaunch< DriverType
       CUDA_SAFE_CALL( cudaGetLastError() );
       Kokkos::Cuda::fence();
 #endif
+
+      // reset
+      Kokkos::CudaSpace::setMaxDynamicSharedMemorySize(-1);
+      Kokkos::CudaSpace::setPreferredSharedMemoryCarveout(-1);      
     }
   }
 };
@@ -383,11 +461,29 @@ struct CudaParallelLaunch< DriverType
       #ifndef KOKKOS_ARCH_KEPLER
       // On Kepler the L1 has no benefit since it doesn't cache reads
       else {
-        CUDA_SAFE_CALL(
-          cudaFuncSetCacheConfig
-            ( cuda_parallel_launch_local_memory< DriverType >
-            , ( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )
-            ) );
+	
+	int maxDynamicSharedMemorySize = Kokkos::CudaSpace::getMaxDynamicSharedMemorySize();
+	int preferredSharedMemoryCarveout = Kokkos::CudaSpace::getPreferredSharedMemoryCarveout();
+
+	if(preferredSharedMemoryCarveout == -1 && maxDynamicSharedMemorySize == -1){
+	  CUDA_SAFE_CALL(cudaFuncSetCacheConfig(cuda_parallel_launch_constant_memory< DriverType >,
+						( shmem ? cudaFuncCachePreferShared : cudaFuncCachePreferL1 )) );
+
+	}else{
+	  if(maxDynamicSharedMemorySize == -1){
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute(cuda_parallel_launch_constant_memory< DriverType >,
+						cudaFuncAttributePreferredSharedMemoryCarveout,
+						preferredSharedMemoryCarveout) );
+	  }
+	  if(maxDynamicSharedMemorySize > 0){
+	    if( maxDynamicSharedMemorySize < shmem )
+	      maxDynamicSharedMemorySize = shmem;
+	  
+	    CUDA_SAFE_CALL(cudaFuncSetAttribute(cuda_parallel_launch_constant_memory< DriverType >,
+						cudaFuncAttributeMaxDynamicSharedMemorySize,
+						maxDynamicSharedMemorySize) );
+	  }
+	}		
       }
       #endif
 
@@ -401,6 +497,9 @@ struct CudaParallelLaunch< DriverType
       CUDA_SAFE_CALL( cudaGetLastError() );
       Kokkos::Cuda::fence();
 #endif
+      // reset
+      Kokkos::CudaSpace::setMaxDynamicSharedMemorySize(-1);
+      Kokkos::CudaSpace::setPreferredSharedMemoryCarveout(-1);      
     }
   }
 };

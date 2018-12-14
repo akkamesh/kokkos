@@ -97,12 +97,22 @@ public:
   static void access_error();
   static void access_error( const void * const );
 
+  static void setMaxDynamicSharedMemorySize (int value);
+  static void setPreferredSharedMemoryCarveout (int value);
+
+  static int getMaxDynamicSharedMemorySize ();
+  static int getPreferredSharedMemoryCarveout ();
+
 private:
 
   int  m_device ; ///< Which Cuda device
 
   static constexpr const char* m_name = "Cuda";
   friend class Kokkos::Impl::SharedAllocationRecord< Kokkos::CudaSpace , void > ;
+
+  static int maxDynamicSharedMemorySize;
+  static int preferredSharedMemoryCarveout;
+
 };
 
 namespace Impl {
